@@ -31,17 +31,60 @@ Este es un proyecto completo de Ingeniería de Datos que simula un pipeline de d
 **¿Qué vas a aprender?**
 
 ✅ Ingesta incremental de datos
+
 ✅ Pipelines basados en metadatos
+
 ✅ Dimensiones de Cambio Lento (SCD Tipo 2)
+
 ✅ Esquema en Estrella (Star Schema)
+
 ✅ Pruebas de calidad con dbt
+
 ✅ Modelos efímeros (Ephemeral) en dbt
+
 ✅ Orquestación con Airflow
+
 ✅ Integración continua con Databricks
+
 ✅ Despliegue en contenedores Docker.
 
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
 
-![image]()
+### 🏗️ Arquitectura del Proyecto
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         FUENTES DE DATOS                                │
+├─────────────────┬────────────────────┬──────────────────────────────────┤
+│   BD OLTP       │   Data Lake S3     │       Tablas de Metadatos        │
+│   (PostgreSQL)  │   (Datos Externos) │       (Configuración)            │
+└────────┬────────┴─────────┬──────────┴──────────┬───────────────────────┘
+         │                  │                     │
+         ▼                  ▼                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    INGESTA INCREMENTAL                                  │
+│                   (Databricks / Spark)                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     LAKEHOUSE EN DATABRICKS                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────┐  │
+│  │  Capa Silver    │  │  Capa Business  │  │  Capa Gold (Star Schema)│  │
+│  │  (Técnica)      │→ │  (Enriquecida)  │→ │  Hechos y Dimensiones   │  │
+│  │  - Modelos dbt  │  │  - Modelos dbt  │  │  - SCD Tipo 2           │  │
+│  │  - Incremental  │  │  - Pruebas      │  │  - Modelos Efímeros     │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      ORQUESTACIÓN Y MONITOREO                           │
+│                      (Apache Airflow + Docker)                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+![image](https://github.com/user-attachments/assets/0c5c058a-bec5-4cde-8af4-8fcf5df366d2)
 
 ![image]()
 
