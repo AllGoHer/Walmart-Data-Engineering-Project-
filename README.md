@@ -2330,39 +2330,39 @@ Luego, creamos el archivo .env
 
 Código:
 
-# ============================================
-# Configuración de Airflow
-# ============================================
+ ============================================
+ Configuración de Airflow
+ ============================================
 FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
 
-# ============================================
-# Credenciales de Airflow
-# ============================================
+ ============================================
+ Credenciales de Airflow
+ ============================================
 _AIRFLOW_WWW_USER_USERNAME=airflow
 _AIRFLOW_WWW_USER_PASSWORD=airflow
 
-# ============================================
-# Directorios del proyecto
-# ============================================
+ ============================================
+ Directorios del proyecto
+ ============================================
 AIRFLOW_PROJ_DIR=.
 
-# ============================================
-# Configuración de la base de datos
-# ============================================
+ ============================================
+ Configuración de la base de datos
+ ============================================
 AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
 AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql+psycopg2://airflow:airflow@postgres/airflow
 AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
 
-# ============================================
-# Configuración adicional
-# ============================================
+ ============================================
+ Configuración adicional
+ ============================================
 AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
 AIRFLOW__CORE__LOAD_EXAMPLES=false
 
-# Para Windows (opcional)
+ Para Windows (opcional)
 AIRFLOW_UID=50000
 
-
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
 ![image](https://github.com/user-attachments/assets/8690d0e9-e537-4289-bee2-1224b7963915)
 
 Ahora, hacemos una copia de la carpeta Walmart_project y lo pegamos dentro de la carpeta de Airflow.
