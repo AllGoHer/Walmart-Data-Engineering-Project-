@@ -363,11 +363,11 @@ ________________________________________________________________________________
 
 ### 🔗 Enlaces Rápidos
 
-- ! [Documentación de Apache Airflow](https://airflow.apache.org/docs/)
+- [Documentación de Apache Airflow](https://airflow.apache.org/docs/)
 
-- ! [Documentación de dbt](https://docs.getdbt.com/?version=2)
+- [Documentación de dbt](https://docs.getdbt.com/?version=2)
 
-- ! [Documentación de Databricks](https://docs.databricks.com/aws/en)
+- [Documentación de Databricks](https://docs.databricks.com/aws/en)
 
 ____________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
