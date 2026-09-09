@@ -1541,45 +1541,762 @@ Luego ejecutamos la consulta.
 
 ![image](https://github.com/user-attachments/assets/3af62218-833b-41b2-93f1-13597c975788)
 
-![image]()
+Ahora, crearemos un caso de prueba personalizado.
 
-![image]()
+Vamos a crear una prueba que no devuelva nada, asi es que, crearemos en test, un archivo llamado test_obt.sql 
 
-![image]()
+Código:
 
-![image]()
+        {{ config(severity='warn')}}
 
-![image]()
+        SELECT 1
+        FROM
+            {{ ref('obt_b') }} AS obt
+        WHERE
+            obt.order_id IS NULL
+            OR obt.store_id IS NULL
+            OR obt.product_id IS NULL
+            OR obt.customer_id IS NULL
+            OR obt.employee_id IS NULL
+            OR obt.order_item_id IS NULL
 
-![image]()
+Ahora, vamos a modificar el código de los archivoS de plata para que no nos de error, donde cambiarenos el termino AND del código de cada archivo por WHERE.
 
-![image]()
+EJEMPLO:
 
-![image]()
+Cambiar AND
 
-![image]()
+![image](https://github.com/user-attachments/assets/f12953bc-3be2-42ea-98e3-b10080bbfcc4)
 
-![image]()
+Por WHERE
 
-![image]()
+![image](https://github.com/user-attachments/assets/c91e55ed-8f73-47c0-8a89-7e3006cc150d)
 
-![image]()
+Ahora, nos vamos al archivo dbt_project y agregamos el código para el archivo silver_b
 
-![image]()
+Código:
 
-![image]()
+        silver_b:
+              +materialized: table
+              +schema: silver_b
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/f14f5d1d-17e5-4c7b-bdbd-b1caf80f30ec)
 
-![image]()
+NOTA: Podemos eliminar el archivo refer.sql, puesto que ya no lo utilizares en el proyecto.
 
-![image]()
 
-![image]()
+Luego, iremos a terminal y ejecutaremos el siguiente código.
 
-![image]()
+Código:
+
+        dbt run --full-refresh 
+
+
+![image](https://github.com/user-attachments/assets/adc25830-cf44-4e8f-8db3-388c3b3f87e0)
+
+Verificamos en Databricks que se haya creado la carpeta silver_b/obt_b
+
+![image](https://github.com/user-attachments/assets/0a2d3065-7881-435f-ae34-3aa0455f3e81)
+
+Ahora aplicaremos la prueba.
+
+Codigo:
+
+        dbt test
+
+![image](https://github.com/user-attachments/assets/78c884fc-d583-40bf-a72c-fb1533918b2e)
+
+Ahora nos vamos a Databricks a verificar. 
+ creamos un notebook y hacemos la siguiente consulta.
+
+Código:
+
+        SELECT * FROM walmart.silver_b.obt_b
+
+
+![image](https://github.com/user-attachments/assets/e3cac65a-92e3-4cd8-a8e7-a79637e70875)
+
+Luego, nos vamos al archivo dbt_project.yml y agregamos al proyecto la capa gold.
+
+Código:
+
+       gold:
+         +materialized: table
+         +schema: gold 
+      
+
+
+![image](https://github.com/user-attachments/assets/8398e614-6737-442a-b3b0-83876cf8b6d3)
+
+Crearemos ahora la carepta gold y dentro de ella los siguientes archivos.
+
+- eph_customer.sql
+
+Código:
+
+        {{ config(materialized='view') }}
+
+        SELECT
+            DISTINCT
+            customer_id,
+            customer_first_name,
+            customer_last_name,
+            customer_email,
+            customer_phone,
+            customer_city,
+            customer_province,
+            customer_country,
+            customer_created_timestamp,
+            customer_updated_timestamp,
+            customer_is_active,
+            customer_processed_at,
+            CURRENT_TIMESTAMP() AS customers_gold_processed_at
+        FROM
+            {{ ref('obt_b') }}
+
+
+Ahora, regresamos al archivo eph_customers.sql y escribiremos el codigo.
+
+Código:
+
+        SELECT
+            DISTINCT
+            customer_id,
+            customer_first_name,
+            customer_last_name,
+            customer_email,
+            customer_phone,
+            customer_city,
+            customer_province,
+            customer_country,
+            customer_created_timestamp,
+            customer_updated_timestamp,
+            customer_is_active,
+            customer_processed_at,
+            CURRENT_TIMESTAMP() AS customers_gold_processed_at
+        FROM
+            {{ ref('obt_b') }}
+
+
+- eph_employees.sql
+
+Código:
+
+        {{ config(materialized='view') }}
+
+        SELECT
+            DISTINCT 
+            employee_id,
+            employee_first_name,
+            employee_last_name,
+            employee_email,
+            salary,
+            job_title,
+            store_id,
+            employee_created_timestamp,
+            employee_updated_timestamp,
+            employee_is_active,
+            employee_processed_at,
+            CURRENT_TIMESTAMP() AS employee_gold_processed_at
+        FROM
+            {{ ref('obt_b') }}
+
+
+- eph_orders.sql
+ 
+Código:
+
+        {{ config(materialized='view') }}
+
+        SELECT
+            DISTINCT 
+            order_id,
+            order_item_id,
+            payment_method,
+            order_status,
+            order_timestamp,
+            order_created_timestamp,
+            order_updated_timestamp,
+            order_is_active,
+            order_processed_at,
+            CURRENT_TIMESTAMP() AS order_gold_processed_at
+        FROM
+            {{ ref('obt_b') }}
+
+
+
+- eph_products.sql
+
+Código:
+
+        {{ config(materialized='view') }}
+
+        SELECT
+            DISTINCT 
+            product_id,
+            product_name,
+            category,
+            brand,
+            price,
+            product_created_timestamp,
+            product_updated_timestamp,
+            product_is_active,
+            product_processed_at,
+            CURRENT_TIMESTAMP() AS products_gold_processed_at
+        FROM
+            {{ ref('obt_b') }}
+
+
+
+- eph_stores.sql
+
+Código:
+
+        {{ config(materialized='view') }}
+
+        SELECT
+            DISTINCT 
+            store_id,
+            store_name,
+            store_city,
+            store_province,
+            store_country,
+            store_created_timestamp,
+            store_updated_timestamp,
+            store_is_active,
+            store_processed_at,
+            CURRENT_TIMESTAMP() AS stores_gold_processed_at
+        FROM
+            {{ ref('obt_b') }}
+
+
+Antes de correr los modelos de gold, haremos una limpieza de caché
+
+Código:
+
+        dbt clean
+
+![image](https://github.com/user-attachments/assets/55c973ef-94da-4612-849d-91a4f5fc54d8)
+
+Luego, verificamos que los modelos sean reconocidos.
+
+Código:
+
+        dbt ls --resource-type model | Select-String "eph"
+
+![image](https://github.com/user-attachments/assets/3940bba4-c46a-48ed-95ad-963d12a8344a)
+
+Ejecuta los modelos (crea las vistas)
+
+Código:
+
+         dbt run --select "eph_*"
+
+
+![image](https://github.com/user-attachments/assets/b8880921-8018-4485-9911-12fb59f4b6d2)
+
+Luego, verificamos que haya ejecutado correctamente en Databricks.
+
+![image](https://github.com/user-attachments/assets/5d66d465-65b0-462f-9b04-8d73d007dd63)
+
+Ahora, en snapshots creamos los siguientes archivos. 
+
+- dim_customers.yml
+
+Código:
+
+        snapshots:
+            - name: dim_customers
+              relation: ref('eph_customers')
+              config:
+                schema: gold
+                database: walmart    
+                unique_key: customer_id
+                strategy: timestamp
+                updated_at: customer_updated_timestamp
+                dbt_valid_to_current: "to_date('9999-12-31')"
+
+
+- dim_products.yml
+
+Código:
+
+        snapshots:
+          - name: dim_products
+            relation: ref('eph_products')
+            config:
+                schema: gold
+                database: walmart    
+                unique_key: product_id
+                strategy: timestamp
+                updated_at: product_updated_timestamp
+                dbt_valid_to_current: "to_date('9999-12-31')"
+
+
+
+- dim_store.yml
+
+Código:
+
+        snapshots:
+          - name: dim_stores
+            relation: ref('eph_stores')
+            config:
+            schema: gold
+                database: walmart    
+                unique_key: store_id
+                strategy: timestamp
+                updated_at: store_updated_timestamp
+                dbt_valid_to_current: "to_date('9999-12-31')"
+
+
+-dim_employees.yml
+
+Código:
+
+        snapshots:
+          - name: dim_employees
+            relation: ref('eph_employees')
+            config:
+                schema: gold
+                database: walmart    
+                unique_key: employee_id
+                strategy: timestamp
+                updated_at: employee_updated_timestamp
+                dbt_valid_to_current: "to_date('9999-12-31')"
+
+
+-dim_orders.yml
+
+Código:
+
+        snapshots:
+          - name: dim_orders
+            relation: ref('eph_orders')
+            config:
+                schema: gold
+                database: walmart    
+                unique_key: order_id
+                strategy: timestamp
+                updated_at: order_updated_timestamp
+                dbt_valid_to_current: "to_date('9999-12-31')"
+
+
+
+
+
+
+Ahora, nos vamos a la terminal y ejecutamos los siguiente.
+
+Código:
+
+        dbt snapshot  
+
+![image](https://github.com/user-attachments/assets/51c96592-551f-4e5f-a65c-f68b48f4e623)
+
+Luego verificamos que todo este bien y, hacemos una consulta en Databricks.
+
+Código:
+
+        SELECT * FROM walmart.gold.dim_customers
+
+![image](https://github.com/user-attachments/assets/ee8d36f8-7197-413e-8e1c-e9d253e6a164)
+
+Ahora, creamos la carpeta de hechos (fact) en la carpeta gold
+
+Código:
+
+        SELECT
+            order_id,
+            order_item_id,
+            product_id,
+            store_id,
+            employee_id,
+            customer_id,
+            total_amount,
+            quantity,
+            unit_price,
+           line_amount
+        FROM
+            {{ ref('obt_b') }} 
+
+![image](https://github.com/user-attachments/assets/3de18630-da5c-4099-b86c-588c6cfcd9c6)
+
+Luego, ejecutamos dbt.
+
+Código:
+
+        dbt run
+
+![image](https://github.com/user-attachments/assets/224c9d73-67c3-45d4-8b87-c297382cf7fa)
+
+Verificamos en Databricks.
+
+Código:
+
+        SELECT * FROM walmart.gold.fact_orders
+
+
+![image](https://github.com/user-attachments/assets/3ee32761-619b-4a15-ab8a-8af84f8c8d73)
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
+
+![image](https://github.com/user-attachments/assets/87cf2efc-6a99-4cfd-bd22-17336317c933)
+
+Para esta etapa, trabajaremos con dos herramientas más, Airflow y docker, para lo cual, es necesario cumplir con dos requisitos.
+
+1.	Tener instalado docker desktop y mantenerlo abierto.
+
+2.	Descargar Airflow docker compose e instalarlo en Visual Studio Code (ver en el siguiente paso). 
+
+Ahora, vamos a crear una carpeta llamada Airflow en la raíz del proyecto.
+
+![image](https://github.com/user-attachments/assets/f213b097-1a48-47e0-ad21-67c767d53059)
+
+Luego, dentro de el creamos el archivo docker-compose.yml
+
+Código:
+
+        # Licensed to the Apache Software Foundation (ASF) under one
+        # or more contributor license agreements.  See the NOTICE file
+        # distributed with this work for additional information
+        # regarding copyright ownership.  The ASF licenses this file
+        # to you under the Apache License, Version 2.0 (the
+        # "License"); you may not use this file except in compliance
+        # with the License.  You may obtain a copy of the License at
+        #
+        #   http://www.apache.org/licenses/LICENSE-2.0
+        #
+        # Unless required by applicable law or agreed to in writing,
+        # software distributed under the License is distributed on an
+        # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+        # KIND, either express or implied.  See the License for the
+        # specific language governing permissions and limitations
+        # under the License.
+        #
+
+        # Basic Airflow cluster configuration for CeleryExecutor with Redis and PostgreSQL.
+        #
+        # WARNING: This configuration is for local development. Do not use it in a production deployment.
+        #
+        # This configuration supports basic configuration using environment variables or an .env file
+        # The following variables are supported:
+        #
+        # AIRFLOW_IMAGE_NAME           - Docker image name used to run Airflow.
+        #                                Default: apache/airflow:3.3.1
+        # AIRFLOW_UID                  - User ID in Airflow containers
+        #                                Default: 50000
+        # AIRFLOW_PROJ_DIR             - Base path to which all the files will be volumed.
+        #                                Default: .
+        # Those configurations are useful mostly in case of standalone testing/running Airflow in test/try-out mode
+        #
+        # _AIRFLOW_WWW_USER_USERNAME   - Username for the administrator account (if requested).
+        #                                Default: airflow
+        # _AIRFLOW_WWW_USER_PASSWORD   - Password for the administrator account (if requested).
+        #                                Default: airflow
+        # _PIP_ADDITIONAL_REQUIREMENTS - Additional PIP requirements to add when starting all containers.
+        #                                Use this option ONLY for quick checks. Installing requirements at container
+        #                                startup is done EVERY TIME the service is started.
+        #                                A better way is to build a custom image or extend the official image
+        #                                as described in https://airflow.apache.org/docs/docker-stack/build.html.
+        #                                Default: ''
+        #
+        # Feel free to modify this file to suit your needs.
+         ---
+        x-airflow-common:
+        &airflow-common
+        # In order to add custom dependencies or upgrade provider distributions you can use your extended image.
+        # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
+        # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
+        image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.3.1}
+        # build: .
+        env_file:
+          - ${ENV_FILE_PATH:-.env}
+        environment:
+          &airflow-common-env
+          AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+          AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+          AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+          AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:airflow@postgres/airflow
+          AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+          AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY}
+          AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+          AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+          AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+          AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-airflow_jwt_secret}
+          AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+         # yamllint disable rule:line-length
+         # Use simple http server on scheduler for health checks
+         # See https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/check-health.html#scheduler-health-check-server
+         # yamllint enable rule:line-length
+         AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+         # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
+         # for other purpose (development, test and especially production usage) build/extend Airflow image.
+         _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+         # The following line can be used to set a custom config file, stored in the local config folder
+         AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+       volumes:
+         - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+         - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+         - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+         - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+       user: "${AIRFLOW_UID:-50000}:0"
+       depends_on:
+         &airflow-common-depends-on
+         redis:
+           condition: service_healthy
+         postgres:
+           condition: service_healthy
+
+      services:
+        postgres:
+         image: postgres:16
+         environment:
+           POSTGRES_USER: airflow
+           POSTGRES_PASSWORD: airflow
+           POSTGRES_DB: airflow
+         volumes:
+           - postgres-db-volume:/var/lib/postgresql/data
+         healthcheck:
+           test: ["CMD", "pg_isready", "-U", "airflow"]
+           interval: 10s
+           retries: 5
+           start_period: 5s
+         restart: always
+
+       redis:
+         # Redis is limited to 7.2-bookworm due to licencing change
+         # https://redis.io/blog/redis-adopts-dual-source-available-licensing/
+         image: redis:7.2-bookworm
+         expose:
+           - 6379
+         healthcheck:
+           test: ["CMD", "redis-cli", "ping"]
+           interval: 10s
+           timeout: 30s
+           retries: 50
+           start_period: 30s
+           restart: always
+
+       airflow-apiserver:
+         <<: *airflow-common
+         command: api-server
+         ports:
+           - "8080:8080"
+         healthcheck:
+           test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+           interval: 30s
+           timeout: 10s
+           retries: 5
+           start_period: 30s
+         restart: always
+         depends_on:
+           <<: *airflow-common-depends-on
+           airflow-init:
+             condition: service_completed_successfully
+
+       airflow-scheduler:
+         <<: *airflow-common
+         command: scheduler
+         healthcheck:
+           test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+           interval: 30s
+           timeout: 10s
+           retries: 5
+           start_period: 30s
+         restart: always
+         depends_on:
+           <<: *airflow-common-depends-on
+           airflow-init:
+             condition: service_completed_successfully
+
+        airflow-dag-processor:
+         <<: *airflow-common
+         command: dag-processor
+         healthcheck:
+           test: ["CMD-SHELL", 'airflow jobs check --job-type DagProcessorJob --hostname "$${HOSTNAME}"']
+           interval: 30s
+           timeout: 10s
+           retries: 5
+           start_period: 30s
+         restart: always
+         depends_on:
+           <<: *airflow-common-depends-on
+           airflow-init:
+             condition: service_completed_successfully
+
+       airflow-worker:
+         <<: *airflow-common
+         command: celery worker
+         healthcheck:
+           # yamllint disable rule:line-length
+           test: ["CMD-SHELL", 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"']
+           interval: 30s
+           timeout: 10s
+           retries: 5
+           start_period: 30s
+         environment:
+           <<: *airflow-common-env
+           # Required to handle warm shutdown of the celery workers properly
+           # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
+          DUMB_INIT_SETSID: "0"
+         restart: always
+         depends_on:
+           <<: *airflow-common-depends-on
+           airflow-apiserver:
+             condition: service_healthy
+           airflow-init:
+             condition: service_completed_successfully
+
+       airflow-triggerer:
+         <<: *airflow-common
+         command: triggerer
+         healthcheck:
+           test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+           interval: 30s
+           timeout: 10s
+           retries: 5
+           start_period: 30s
+         restart: always
+         depends_on:
+           <<: *airflow-common-depends-on
+           airflow-init:
+             condition: service_completed_successfully
+
+       airflow-init:
+         <<: *airflow-common
+         entrypoint: /bin/bash
+         # yamllint disable rule:line-length
+          command:
+           - -c
+           - |
+             if [[ -z "${AIRFLOW_UID}" ]]; then
+               echo
+               echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
+               echo "If you are on Linux, you SHOULD follow the instructions below to set "
+               echo "AIRFLOW_UID environment variable, otherwise files will be owned by root."
+               echo "For other operating systems you can get rid of the warning with manually created .env file:"
+               echo "    See: https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#setting-the-right-airflow-user"
+               echo
+               export AIRFLOW_UID=$$(id -u)
+             fi
+             one_meg=1048576
+             mem_available=$$(($$(getconf _PHYS_PAGES) * $$(getconf PAGE_SIZE) / one_meg))
+             cpus_available=$$(grep -cE 'cpu[0-9]+' /proc/stat)
+             disk_available=$$(df / | tail -1 | awk '{print $$4}')
+             warning_resources="false"
+             if (( mem_available < 4000 )) ; then
+               echo
+               echo -e "\033[1;33mWARNING!!!: Not enough memory available for Docker.\e[0m"
+               echo "At least 4GB of memory required. You have $$(numfmt --to iec $$((mem_available * one_meg)))"
+               echo
+               warning_resources="true"
+        fi
+        if (( cpus_available < 2 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough CPUS available for Docker.\e[0m"
+          echo "At least 2 CPUs recommended. You have $${cpus_available}"
+          echo
+          warning_resources="true"
+        fi
+        if (( disk_available < one_meg * 10 )); then
+          echo
+          echo -e "\033[1;33mWARNING!!!: Not enough Disk space available for Docker.\e[0m"
+          echo "At least 10 GBs recommended. You have $$(numfmt --to iec $$((disk_available * 1024 )))"
+          echo
+          warning_resources="true"
+        fi
+        if [[ $${warning_resources} == "true" ]]; then
+          echo
+          echo -e "\033[1;33mWARNING!!!: You have not enough resources to run Airflow (see above)!\e[0m"
+          echo "Please follow the instructions to increase amount of resources available:"
+          echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
+          echo
+        fi
+        echo
+        echo "Creating missing opt dirs if missing:"
+        echo
+        mkdir -v -p /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Airflow version:"
+        /entrypoint airflow version
+        echo
+        echo "Files in shared volumes:"
+        echo
+        ls -la /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Running airflow config list to create default config file if missing."
+        echo
+        /entrypoint airflow config list >/dev/null
+        echo
+        echo "Files in shared volumes:"
+        echo
+        ls -la /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Change ownership of files in /opt/airflow to ${AIRFLOW_UID:-50000}:0"
+        echo
+        chown -R "${AIRFLOW_UID:-50000}:0" /opt/airflow/
+        echo
+        echo "Change ownership of files in shared volumes to ${AIRFLOW_UID:-50000}:0"
+        echo
+        chown -v -R "${AIRFLOW_UID:-50000}:0" /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Files in shared volumes:"
+        echo
+        ls -la /opt/airflow/{logs,dags,plugins,config}
+
+    # yamllint enable rule:line-length
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _PIP_ADDITIONAL_REQUIREMENTS: ''
+    user: "0:0"
+
+  airflow-cli:
+    <<: *airflow-common
+    profiles:
+      - debug
+    environment:
+      <<: *airflow-common-env
+      CONNECTION_CHECK_MAX_COUNT: "0"
+    # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
+    command:
+      - bash
+      - -c
+      - airflow
+    depends_on:
+      <<: *airflow-common-depends-on
+
+  # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
+  # or by explicitly targeted on the command line e.g. docker-compose up flower.
+  # See: https://docs.docker.com/compose/profiles/
+  flower:
+    <<: *airflow-common
+    command: celery flower
+    profiles:
+      - flower
+    ports:
+      - "5555:5555"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-db-volume:
+
+
 
 ![image]()
 
