@@ -834,6 +834,10 @@ Código:
 
 ![image](https://github.com/user-attachments/assets/56de9282-ba32-4da2-b587-d8078529167c)
 
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
+
+### SILVER LAYER
+
 Ahora, en la carpeta models crearemos una carpeta llamada silver_t y dentro de ella un archivo llamado orders_t.sql.
 
 Y dentro de la carpeta Walmart_project\analyses creamos el archivo scratch.sql
@@ -1616,6 +1620,10 @@ Código:
 
 
 ![image](https://github.com/user-attachments/assets/e3cac65a-92e3-4cd8-a8e7-a79637e70875)
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
+
+### GOLD LAYER
 
 Luego, nos vamos al archivo dbt_project.yml y agregamos al proyecto la capa gold.
 
