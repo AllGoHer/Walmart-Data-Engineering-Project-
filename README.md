@@ -546,87 +546,222 @@ ________________________________________________________________________________
 
 
 ### BRONZE LAYER
-
+___________________________________________________________________________________________________________________________________________________________________________________________________________________________
 Ahora, creamos el esquema bronce.
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/68509cbd-e6dc-4fe6-83ee-702b4b709533)
 
-![image]()
+![image](https://github.com/user-attachments/assets/99b9303a-9e84-4fbb-9371-b1208cd4d5d9)
 
-![image]()
+Ahora, haremos la ingestión de datos con Databricks de modo CDC y con tablas delta en la capa bronce.
 
-![image]()
+![image](https://github.com/user-attachments/assets/5f0d9efc-3d35-461c-87ed-d0bec3cdb3b3)
 
-![image]()
+Regresamos a VSC para conectar nuestra base de datos.
 
-![image]()
+Código:
 
-![image]()
+       ghost connect waltmart_db
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/3712b834-5729-4f98-a348-d5411205f77c)
 
-![image]()
+Ahora, creamos la carpeta una carpeta llamada connection en el proyecto y pasamos el código de conexión postgresql.
 
-![image]()
+![image](https://github.com/user-attachments/assets/3876bdf1-c1d3-49ea-a773-ff4d83bdb93c)
 
-![image]()
+Y guardamos.
 
-![image]()
+Luego, nos dirigimos a Databricks en la sección de Data Ingestion y seleccionamos PostgreSQL 
 
-![image]()
+![image](https://github.com/user-attachments/assets/14a9be3c-2fa3-4d27-a0b7-caf36b26d6cd)
 
-![image]()
+Ahora creamos una conexión.
 
-![image]()
+![image](https://github.com/user-attachments/assets/6bbe9a75-1476-48f6-aae6-80584fae2ad8)
 
-![image]()
+Los demás datos provienen de esta contraseña.
 
-![image]()
+![image](https://github.com/user-attachments/assets/af87c85d-a1bc-415c-83f2-3a33f10de606)
 
-![image]()
+Luego, damos check o seleccionamos Trust server certificate y por ultimo crear
 
-![image]()
+![image](https://github.com/user-attachments/assets/215e0788-dccf-47d2-8b6b-dd846572ae83)
 
-![image]()
+![image](https://github.com/user-attachments/assets/dcabccdf-2747-4441-ae8b-214b8da8a3a7)
 
-![image]()
+![image](https://github.com/user-attachments/assets/e78be1d8-b4dd-4bac-afde-61d136f89a17)
 
-![image]()
+Luego, le damos click a next ubicado en la esquina inferior derecha.
 
-![image]()
+![image](https://github.com/user-attachments/assets/d0257856-56e8-4968-a785-5a54e7f83b81)
 
-![image]()
+Llenamos los datos requeridos de la siguiente manera.
 
-![image]()
+![image](https://github.com/user-attachments/assets/30a97bcf-47f9-4ac7-9c87-3f10fd8d8fb6)
 
-![image]()
+En la ventana emergente escribimos la base: tsdb y luego, damos click en más + y desplegamos raw y seleccionamos nuestras tablas.
 
-![image]()
+![image](https://github.com/user-attachments/assets/8c84f8de-5c30-468c-a6dd-eab6822d1fdd)
 
-![image]()
+Ahora, configuramos los ajustes o settings.
 
-![image]()
+Seleccionamos una de las tablas, ejemplo customer.
 
-![image]()
+- En cursor column seleccionamos Updated_timestamp
 
-![image]()
+- primary key: customer_id
 
-![image]()
+Y asi, de la misma forma para todas las tablas.
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/28224862-fe59-4289-83f3-3893857bacd3)
 
-![image]()
+Después de hacer lo mismo con todas las tablas de raw. Damos click a next.
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/1b8f6c2c-7544-4460-b99d-16ed1e1eb2e1)
 
-![image]()
+Luego, haz click en siguiente y luego en guardar y ejecutar pipeline.
+
+![image](https://github.com/user-attachments/assets/94516e46-4035-4dc7-910f-1409c719603a)
+
+Ahora, para verificar que todo está bien, haremos la siguiente consulta.
+
+Código:
+
+SELECT COUNT(*) FROM walmart.bronze.order_items
+
+![image](https://github.com/user-attachments/assets/fb9a29ab-9c26-4164-8aac-91fa810059f6)
+
+Ahora, vamos a trabajar con dbt y necesitaremos configurarlo.
+
+Crearemos una nueva carpeta llamada DBT_Project y lo abriremos en VSC 
+
+![image](https://github.com/user-attachments/assets/efa7b068-5faf-41ce-88c8-b4df80a70077)
+
+Primero comprobamos que tengamos instalado git. Así es que, en la terminal escribimos esto.
+
+Código:
+
+        Git –-version
+
+![image](https://github.com/user-attachments/assets/8a62dd09-6a90-469f-ba55-24db9e5c1fb2)
+
+También debes tener instalado python para dbt. Aquí muestro un cuadro de compatibilidad de versiones.
+
+![image](https://github.com/user-attachments/assets/057a1c02-6745-4e9f-8c6a-6212414b446b)
+
+Luego, instalamos UV para python.
+
+Código:
+
+       Python -m pip install uv
+
+
+
+![image](https://github.com/user-attachments/assets/6a18b1f4-e042-4bae-b2b7-268f7a136e40)
+
+Ahora, iniciamos uv.
+
+Código:
+
+       uv init
+
+y se creara automáticamente los siguientes archivos.
+
+
+![image](https://github.com/user-attachments/assets/bf0aa975-4852-4e74-b76d-5aab8a069e03)
+
+Ahora, sincronizamos uv.
+
+Código:
+
+        uv sync
+
+![image](https://github.com/user-attachments/assets/40dbe6c9-af13-4d2d-90e1-b17e52d3d5e9)
+
+Luego, activamos el entorno virtual.
+
+Código:
+
+        .venv/Scripts/activate
+
+
+![image](https://github.com/user-attachments/assets/dc4c182e-f52d-4058-b9a3-036426da240e)
+
+Ahora, descargaremos dbt.
+
+Código: 
+
+        uv add dbt-core
+
+![image](https://github.com/user-attachments/assets/d9d9ccb1-6530-4b15-86c4-27282ad04767)
+
+Ahora, lo conectaremos con una fuente en este caso Databricks
+
+Código:
+
+        uv add dbt-databricks
+
+
+![image](https://github.com/user-attachments/assets/a1745285-e2dc-414a-a698-87b8e157193a)
+
+Iniciares ahora el dbt.
+
+Código:
+
+        dbt init
+
+luego, te hará las siguientes preguntas y completarlas.
+
+
+![image](https://github.com/user-attachments/assets/ac800e5c-ddbe-4e98-8cba-48e53355d719)
+
+Ahora, para contestar las siguientes preguntas, debes ir a Databricks e ir a compute, luego, seleccionar serverless starter warehouse y luego seleccionamos connection details.
+
+![image](https://github.com/user-attachments/assets/83de5d90-bc5a-40e8-83b0-58cc41b300fd)
+
+![image](https://github.com/user-attachments/assets/44654581-ecb3-4059-a0b2-8e0a68d23a48)
+
+Donde copiaras y pegaras los datos que te solicitan.
+
+Ahora crearemos un token, para ello, nos dirigimos a la esquina superior derecha y seleccionamos settings
+
+![image](https://github.com/user-attachments/assets/68870ee6-9f98-46c0-aa55-4f0554d79648)
+
+Luego a deployment
+
+![image](https://github.com/user-attachments/assets/1fe6d701-83cf-4de0-b094-5c423237619d)
+
+Luego, a manage
+
+![image](https://github.com/user-attachments/assets/2067ea72-3d12-4d45-91c4-429eb3cb3be0)
+
+De ahí, generar un nuevo token
+
+![image](https://github.com/user-attachments/assets/07dbbef1-9eb6-44c3-a99c-835c16946678)
+
+![image](https://github.com/user-attachments/assets/c54da9fc-4eb6-4007-9125-cd9f5d1ff9d0)
+
+Y finalmente, damos click en generar
+
+![image](https://github.com/user-attachments/assets/865a0f93-79fe-45a5-a1e1-801956ecb3fd)
+
+![image](https://github.com/user-attachments/assets/df333613-36a8-44be-969d-9562dc264777)
+
+
+![image](https://github.com/user-attachments/assets/251cd279-535f-4294-9ac6-99934308ecad)
+
+Ahora, en el archivo de dbt_project.yml el código se encuentra con líneas rojas, para vamos establecer las configuraciones de dbt.
+
+1. Vamos a la parte inferior de VSC y ubicamos “dbt core is not installed” y, hacemos click ahí, luego seleccionamos Troubleshooting Setup the extensión.
+
+![image](https://github.com/user-attachments/assets/85dd1d62-53e3-4b52-806b-a11a76132037)
+
+![image](https://github.com/user-attachments/assets/965e90b5-02ac-4e87-859e-5fedbf538d4b)
+
+Y veremos esto.
 
 ![image]()
 
