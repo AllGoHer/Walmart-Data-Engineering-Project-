@@ -763,109 +763,721 @@ Ahora, en el archivo de dbt_project.yml el código se encuentra con líneas roja
 
 Y veremos esto.
 
-![image]()
+![image](https://github.com/user-attachments/assets/4b4fee63-669f-4920-8c99-d8c65fa357e0)
 
-![image]()
+2.	Hacemos click seleccionar interprete de python.
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/097eb697-24b6-4714-822d-83d662031c31)
 
-![image]()
+3.damos click en validar
 
-![image]()
+![image](https://github.com/user-attachments/assets/9a0b4a30-fa3c-4363-9a7d-8d98474c2753)
 
-![image]()
+4.	Luego en validar
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/33b65171-306c-40a1-ae0a-4a77c9f3582e)
 
-![image]()
+![image](https://github.com/user-attachments/assets/69129647-4521-4fd7-ad11-f296808614bc)
 
-![image]()
+Y listo, solo cerramos la pestaña Get started with dbt power user.
 
-![image]()
+![image](https://github.com/user-attachments/assets/638af083-6521-4eb2-97cb-7c24d4d6c3a5)
 
-![image]()
+Y como ven ahora, se valido todo el código, ósea ya aparece sin subrayar.
 
-![image]()
 
-![image]()
+Ahora, creamos una carpeta llamada source y dentro de ella un archivo test.sql
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/4b43dfb6-9e82-4b67-a1d3-0a4ff88b4cc7)
 
-![image]()
+Código:
 
-![image]()
+        SELECT * FROM walmart.bronze.customers
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/709a58c3-1698-43f4-a185-138659aa8004)
 
-![image]()
+![image](https://github.com/user-attachments/assets/7dbecdb8-19fc-4c9d-902f-c3d178f954f9)
 
-![image]()
+Ahora, en la carpeta models\source creamos un archivo llamado source.yml
 
-![image]()
+Código:
 
-![image]()
+       sources:
+         - name: walmart_databricks
+           database: walmart
+           schema: bronze
+           tables:
 
-![image]()
+               - name: orders
 
-![image]()
+               - name: customers
 
-![image]()
+               - name: products
 
-![image]()
+               - name: order_items
 
-![image]()
+               - name: stores
 
-![image]()
+               - name: employees
 
-![image]()
+![image](https://github.com/user-attachments/assets/cc339ae1-b250-4934-9d12-a0bbd3413c39)
 
-![image]()
+Volvemos a test.sql
 
-![image]()
+Código:
 
-![image]()
+        SELECT * FROM {{ source('walmart_databricks', 'orders') }};
 
-![image]()
+![image](https://github.com/user-attachments/assets/56de9282-ba32-4da2-b587-d8078529167c)
 
-![image]()
+Ahora, en la carpeta models crearemos una carpeta llamada silver_t y dentro de ella un archivo llamado orders_t.sql.
 
-![image]()
+Y dentro de la carpeta Walmart_project\analyses creamos el archivo scratch.sql
 
-![image]()
 
-![image]()
+Código:
 
-![image]()
+        SELECT 
+            *
+        FROM
 
-![image]()
+            {{ source('walmart_databricks', 'orders') }}
 
-![image]()
 
-![image]()
+Para materializar de forma incremental medianye jinja haremos los siguiente.
 
-![image]()
+Código:
 
-![image]()
+        {{ 
+            config(
+            materialized='incremental'
+            ) 
+        }}
 
-![image]()
+        SELECT 
+            *
+        FROM
 
-![image]()
+            {{ source('walmart_databricks', 'orders') }}
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/16303901-804f-41dd-8c5b-b64fb298d651)
 
-![image]()
+Ahora si queremos materializar como una mesa, vamos al archivodbt_project.yml y cambiaremos el objeto y el tipo de materialización.
 
-![image]()
+
+Inicial.
+
+![image](https://github.com/user-attachments/assets/7d128348-1565-426d-9e5c-55366e374123)
+
+Cambio:
+
+![image](https://github.com/user-attachments/assets/90ceaabd-996c-428c-b354-28de7437f8e9)
+
+Luego, en la carpeta silver_t creamos un archivo properties.yml
+
+![image](https://github.com/user-attachments/assets/1bd7d0f1-e14d-4c2d-a3ec-54652dd4591e)
+
+Ahora, al código anterior agregaremos una clave única para evitar en las inserciones las ordenes de pedidos con el mismo id.
+
+Código:
+
+        {{ 
+            config(
+                materialized='incremental'
+                unique_key='order_id'
+            ) 
+        }}
+
+        SELECT 
+            *
+        FROM
+
+            {{ source('walmart_databricks', 'orders') }}
+
+
+![image](https://github.com/user-attachments/assets/e32c70e2-dce1-40df-a6e1-3d831dbf8933)
+
+No queremos pedidos que estén inactivos y los filtraremos.
+
+Código:
+
+       SELECT 
+           *,
+           current_timestamp() as processed_at
+       FROM
+
+           {{ source('walmart_databricks', 'orders') }}
+
+       where
+          is_active = 'Y'
+
+
+![image](https://github.com/user-attachments/assets/6d7ee841-33d1-4a14-80cd-f719a68ce8da)
+
+Ahora, veremos de forma incremental usando jinja, asi es que, volveremos al código anterior y agregaremos mas código al final.
+
+Código:
+
+        {{ 
+            config(
+                materialized='incremental',
+                unique_key='order_id'
+            ) 
+        }}
+
+        SELECT 
+            *,
+            current_timestamp() as processed_at
+        FROM
+
+            {{ source('walmart_databricks', 'orders') }}
+
+        where
+            is_active = 'Y'
+
+        {% if is_incremental() %}
+
+            AND processed_at > (SELECT MAX(processed_at) FROM {{ this }})
+
+        {% endif %}
+
+
+
+![image](https://github.com/user-attachments/assets/3cf0c92f-4215-49cc-b709-b543dcb2bd77)
+
+Haremos otra consulta, pero dentro del proyecto, para ello prepararemos el código y luego más adelante lo ejecutaremos.
+
+Código:
+
+        {{ 
+            config(
+                materialized='incremental',
+                unique_key='order_id'
+            ) 
+        }}
+
+        SELECT 
+             *,
+            current_timestamp() as processed_at
+        FROM
+
+            {{ source('walmart_databricks', 'orders') }}
+
+        where
+            is_active = 'Y'
+
+         {% if is_incremental() %}
+
+            AND processed_at > (SELECT COALESE(MAX(updated_timestamp), '1900-01-01') FROM {{ this }})
+   
+         {% endif %}
+
+
+
+Ahora, entraremos al proyecto para ejecutar las siguientes consultas.
+
+Código:
+
+        cd Walmart_project
+
+Codigo:
+
+        dbt debug
+
+
+
+![image](https://github.com/user-attachments/assets/beafb7bc-9973-43bd-8880-6bea8a949faa)
+
+![image](https://github.com/user-attachments/assets/e9c81f57-2891-4f5c-bfdc-f5dba1c017d0)
+
+Codigo:
+
+        dbt run
+
+![image](https://github.com/user-attachments/assets/89d7136b-3d57-4142-b1b1-9eeb19bc5052)
+
+![image](https://github.com/user-attachments/assets/19465e85-36ed-4eb3-981b-4689df6112dd)
+
+Ahora verificamos en Databricks que se haya creado.
+
+![image](https://github.com/user-attachments/assets/fa8eceb4-b90c-4ae1-8ae3-7b3fcc0bc991)
+
+Abriremos un cuaderno para verificar si todo esta bien.
+
+Código:
+
+        SELECT COUNT(*) FROM walmart.dbt_schema.orders_t
+
+
+![image](https://github.com/user-attachments/assets/c28981b5-749f-4763-83e4-89a3c622b6bc)
+
+El código de orders_t.sql deberá quedar asi, para que no tenga errores en la ejecución.
+
+Código:
+
+        {{ 
+             config(
+                materialized='incremental',
+                unique_key='order_id'
+            ) 
+        }}
+
+         SELECT 
+            *,
+            current_timestamp() as processed_at
+         FROM
+
+            {{ source('walmart_databricks', 'orders') }}
+
+        where
+            is_active = 'Y'
+
+        {% if is_incremental() %}
+
+            AND updated_timestamp > (SELECT COALESE(MAX(updated_timestamp), '1900-01-01') FROM {{ this }})
+   
+        {% endif %}
+
+![image](https://github.com/user-attachments/assets/d815e93d-515a-4dca-950e-17c0c5506be7)
+
+Ahora ejecutamos dbt run.
+
+![image](https://github.com/user-attachments/assets/18e17e23-50d8-40b5-b31e-f4542e1e5d46)
+
+Luego en macros creamos un archivo llamado custom_schema.yml
+
+![image](https://github.com/user-attachments/assets/4865f890-0fa6-4761-a40b-6fe1680a1889)
+
+Código:
+
+        {% macro generate_schema_name(custom_schema_name, node) -%}
+
+            {%- set default_schema = target.schema -%}
+            {%- if custom_schema_name is none -%}
+
+                {{ default_schema }}
+
+            {%- else -%}
+
+                {{ default_schema }}_{{ custom_schema_name | trim }}
+
+            {%- endif -%}
+
+        {%- endmacro %}
+
+
+En este código debemos quitar el esquema predeterminado, el cual quedará así.
+
+Código:
+
+        {% macro generate_schema_name(custom_schema_name, node) -%}
+
+            {%- set default_schema = target.schema -%}
+            {%- if custom_schema_name is none -%}
+
+                {{ default_schema }}
+
+            {%- else -%}
+
+                {{ custom_schema_name | trim }}
+
+            {%- endif -%}
+
+        {%- endmacro %}
+
+![image](https://github.com/user-attachments/assets/cf0b23a8-5873-4b1a-88fe-44aeeaaf3fd5)
+
+Ahora, nos vamos a dbt_project y al final del código y agregamos lo siguiente.
+
+Código:
+
+        +schema: silver_t
+
+![image](https://github.com/user-attachments/assets/0dc85066-14bd-4278-8381-b3a0ce780f32)
+
+Luego, vamos a la terminal y ejecutamos.
+
+Codigo:
+
+        dbt run
+
+
+![image](https://github.com/user-attachments/assets/f2b95659-edee-4c69-b09d-6ef82aa32fd3)
+
+Para confirmar vamos a Databricks catálogo.
+
+
+![image](https://github.com/user-attachments/assets/ddb60e51-8f22-487d-a872-d17c27dea6cb)
+
+Nos vamos ahora a al VSC a la carpeta model y creamos un archivo llamado products_t.sql con el siguiente codigo.
+
+Codigo:
+ 
+        {{ 
+            config(
+                materialized='incremental',
+                unique_key='product_id'
+            ) 
+        }}
+
+        SELECT 
+            *,
+            current_timestamp() as processed_at
+        FROM
+
+            {{ source('walmart_databricks', 'products') }}
+
+         where
+             is_active = 'Y'
+
+         {% if is_incremental() %}
+
+            AND updated_timestamp > (SELECT COALESCE(MAX(updated_timestamp), '1900-01-01') FROM {{ this }})
+   
+        {% endif %}
+
+![image](https://github.com/user-attachments/assets/d80f6a99-7b2e-4044-ac75-96cb6319f5d5)
+
+Y ejecutamos la consulta.
+
+![image](https://github.com/user-attachments/assets/bd2e1929-a85c-4c55-adb7-6622cf231a2d)
+
+
+![image](https://github.com/user-attachments/assets/68879efa-dd57-447a-bff7-14d9dc606d47)
+
+Ahora hay que asegurarse que ninguno de los precios sean negativos.
+
+Entonces creamos un archivo properties.yml en la carpeta models/silvert_t 
+
+Y pasamos le siguiente código.
+
+Código:
+
+        models:
+          - name: products_t
+            columns:
+                - name: product_id
+                  data_tests:
+                    - not_null
+                    - unique
+                - name: price
+                  data_tests:
+                    - greater_than: 0
+
+          - name: orders_t
+            columns:
+                - name: order_id
+                  data_tests:
+                    - not_null
+                    - unique
+
+![image](https://github.com/user-attachments/assets/ae725af5-6af4-4563-a44d-ec781f0d11d7)
+
+Luego vemos el dbt_project subrayado en rojo, no hay preocuparse solo hay que seguir la ejecución.
+
+Hacemos click en jinja, luego seleccionamos CONFIGURE FILE ASOCIATION. Y ahora seleccionamos jinja YML Current Asociation
+
+También puedes ignorarlo.
+
+![image](https://github.com/user-attachments/assets/84629262-a3ca-4769-82df-02babc455095)
+
+
+![image](https://github.com/user-attachments/assets/9fd4ef0b-e781-4879-b1d0-a5d0ea8ea44d)
+
+Luego ejecutamos.
+
+Código:
+
+        dbt run
+
+![image](https://github.com/user-attachments/assets/2c2ca84b-b120-430c-906c-f2e35d9e6177)
+
+Ahora, si vamos a Databricks podremos ver que han sido creados.
+
+![image](https://github.com/user-attachments/assets/73fd5a69-fa6f-4a78-b4ec-4fcb2ec8d727)
+
+Ahora, ejecutamos el test.
+
+Código:
+
+        dbt test
+
+![image](https://github.com/user-attachments/assets/dc44123b-cbbc-49af-9e5b-30d5108f49fe)
+
+Toca ahora crear el mismo proceso para los empleados.
+
+Entonces, creamos un archivo llamado employees_t.sql
+
+Código:
+
+        {{ 
+            config(
+                materialized='incremental',
+                unique_key='employee_id'
+            ) 
+        }}
+
+        SELECT 
+            *,
+            current_timestamp() as processed_at
+        FROM
+
+            {{ source('walmart_databricks', 'employees') }}
+
+        where
+            is_active = 'Y'
+
+        {% if is_incremental() %}
+
+            AND updated_timestamp > (SELECT COALESCE(MAX(updated_timestamp), '1900-01-01') FROM {{ this }})
+   
+        {% endif %}
+
+
+![image](https://github.com/user-attachments/assets/cf816aef-1108-4b34-a359-a7e3fab25212)
+
+Antes de todo, primero ejecutamos la consulta 
+
+
+![image](https://github.com/user-attachments/assets/8294aa7d-a7fd-4b8c-adc4-766b21fe7d39)
+
+Crearemos ahora el archivo stores_t.sql
+
+Código:
+
+        {{ 
+            config(
+                materialized='incremental',
+                unique_key='store_id'
+            ) 
+        }}
+
+        SELECT 
+            *,
+            current_timestamp() as processed_at
+        FROM
+
+            {{ source('walmart_databricks', 'stores') }}
+
+        where
+            is_active = 'Y'
+
+        {% if is_incremental() %}
+
+            AND updated_timestamp > (SELECT COALESCE(MAX(updated_timestamp), '1900-01-01') FROM {{ this }})
+   
+        {% endif %}
+
+
+
+![image](https://github.com/user-attachments/assets/2acca224-7849-4d20-91fb-43c942e14283)
+
+Ahora, toca crear el de clientes (customers_t.sql)
+
+Código:
+
+        {{ 
+            config(
+                materialized='incremental',
+                unique_key='customer_id'
+            ) 
+        }}
+
+        SELECT 
+            *,
+            current_timestamp() as processed_at
+        FROM
+
+            {{ source('walmart_databricks', 'customers') }}
+
+        where
+            is_active = 'Y'
+
+        {% if is_incremental() %}
+
+            AND updated_timestamp > (SELECT COALESCE(MAX(updated_timestamp), '1900-01-01') FROM {{ this }})
+   
+        {% endif %}
+
+
+Ahora, ejecutamos la consulta.
+
+
+![image](https://github.com/user-attachments/assets/36b20205-63b5-4ac4-8ac3-80e850ef3b31)
+
+Luego, creamos el archivo order_items_t.sql
+
+Código:
+
+        {{ 
+            config(
+                materialized='incremental',
+                unique_key='order_item_id'
+            ) 
+        }}
+
+        SELECT 
+            *,
+            current_timestamp() as processed_at
+        FROM
+
+            {{ source('walmart_databricks', 'order_items') }}
+
+        where
+            is_active = 'Y'
+
+        {% if is_incremental() %}
+
+            AND updated_timestamp > (SELECT COALESCE(MAX(updated_timestamp), '1900-01-01') FROM {{ this }})
+   
+        {% endif %}
+
+
+![image](https://github.com/user-attachments/assets/99500c85-0ec8-4d7d-91ef-70af528622ed)
+
+Por último, haremos la prueba.
+
+Código:
+
+        dbt test
+
+![image](https://github.com/user-attachments/assets/dc44eec0-df8a-4704-96f2-e3b6dab08012)
+
+Código:
+
+        dbt run
+
+![image](https://github.com/user-attachments/assets/a6c4b9aa-a40a-47b0-8090-f0f615f61fb4)
+
+Luego, vamos a Databricks para verificar la creación.
+
+![image](https://github.com/user-attachments/assets/badb4f47-46d3-4e45-9c4a-0c7eae247da6)
+
+Ahora crearemos una nueva carpeta llamada obt_b y dentro de ella un archivo llamado obt_b.sql
+
+![image](https://github.com/user-attachments/assets/49366495-d3fa-4dc6-b858-fc5493fa1a22)
+
+Luego, en los archivos sql que creamos anteriormente borraremos esta sección de código.
+
+![image](https://github.com/user-attachments/assets/49137924-115b-42a2-b342-c829b7e29a3c)
+
+Código:
+
+        where
+            is_active = 'Y'
+
+
+tendría que quedar asi.
+
+ejemplo:
+
+
+![image](https://github.com/user-attachments/assets/1e4b7182-72f4-4399-bde0-a35f5d5c4330)
+
+Ahora refrescaremos todo a través de la terminal.
+
+Código:
+
+        dbt run --full-refresh
+
+
+![image](https://github.com/user-attachments/assets/31f0afbb-3e9d-4725-8632-7a189980cb5a)
+
+Luego, creamos en obt_b un rachivo llamado refer.sql con el siguiente código.
+
+Código:
+
+        SELECT
+            -- customers_t columns
+             c.customer_id,
+             c.first_name AS customer_first_name,
+             c.last_name AS customer_last_name,
+             c.email AS customer_email,
+             c.phone AS customer_phone,
+             c.city AS customer_city,
+             c.province AS customer_province,
+             c.country AS customer_country,
+             c.created_timestamp AS customer_created_timestamp,
+             c.updated_timestamp AS customer_updated_timestamp,
+             c.is_active AS customer_is_active,
+             c.processed_at AS customer_processed_at,
+    
+            -- orders_t columns (excluding customer_id which is already included)
+   
+            o.order_id,
+            o.store_id,
+            o.order_timestamp,
+            o.payment_method,
+            o.order_status,
+            o.total_amount,
+            o.created_timestamp AS order_created_timestamp,
+            o.updated_timestamp AS order_updated_timestamp,
+            o.processed_at AS order_processed_at,
+    
+            -- order_items_t columns ()
+    
+            oi.order_item_id,
+            oi.quantity,
+            oi.unit_price,
+            oi.line_amount,
+            oi.created_timestamp AS order_item_created_timestamp,
+            oi.updated_timestamp AS order_item_updated_timestamp,
+            oi.is_active AS order_item_is_active,
+            oi.processed_at AS order_item_processed_at,
+
+            -- products_t columns
+            p.product_id,
+            p.product_name,
+            p.description,
+            p.category,
+            p.brand,
+            p.price,
+            p.created_timestamp AS product_created_timestamp,
+            p.updated_timestamp AS product_updated_timestamp,   
+            p.is_active AS product_is_active,
+            p.processed_at AS product_processed_at,
+    
+            -- stores_t columns (excluding store_id which is already from orders 
+    
+            s.store_name,
+            s.city AS store_city,
+            s.province AS store_province,
+            s.country AS store_country,
+            s.created_timestamp AS store_created_timestamp,
+            s.updated_timestamp AS store_updated_timestamp,
+            s.is_active AS store_is_active,
+            s.processed_at AS store_processed_at,
+    
+            -- employees_t columns
+            e.employee_id,
+            e.first_name AS employee_first_name,
+            e.last_name AS employee_last_name,
+            e.email AS employee_email,
+            e.job_title,
+            e.salary,
+            e.created_timestamp AS employee_created_timestamp,
+            e.updated_timestamp AS employee_updated_timestamp,
+            e.is_active AS employee_is_active,
+            e.processed_at AS employee_processed_at
+
+        FROM walmart.silver_t.orders_t o
+        LEFT JOIN walmart.silver_t.customers_t c
+            ON o.customer_id = c.customer_id
+        LEFT JOIN walmart.silver_t.order_items_t oi
+            ON o.order_id = oi.order_id
+        LEFT JOIN walmart.silver_t.products_t p
+            ON oi.product_id = p.product_id
+        LEFT JOIN walmart.silver_t.stores_t s
+            ON o.store_id = s.store_id
+        LEFT JOIN walmart.silver_t.employees_t e
+            ON o.employee_id = e.employee_id
+
+
 
 ![image]()
 
