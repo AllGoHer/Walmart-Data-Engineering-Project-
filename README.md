@@ -2297,55 +2297,645 @@ Código:
        postgres-db-volume:
 
 
+![image](https://github.com/user-attachments/assets/f6de7b0b-b30a-44dd-85fe-14a8ec817de9)
 
-![image]()
+Luego, en la terminal entramos a la carpeta de Airflow. Pero primero salimos de walmart_project a la carpeta principal dbt_project.
+
+Código:
+
+       cd ..
+
+Código:
+
+        cd Airflow
+
+y creamos las siguientes carpetas en el directorio.
+
+Código:
+
+        mkdir dags, plugins, logs, config
+
+
+![image](https://github.com/user-attachments/assets/bee78e1d-5e89-41fd-b23e-ad00969f18de)
+
+Luego, creamos el archivo .env
+
+Código:
+
+# ============================================
+# Configuración de Airflow
+# ============================================
+FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+
+# ============================================
+# Credenciales de Airflow
+# ============================================
+_AIRFLOW_WWW_USER_USERNAME=airflow
+_AIRFLOW_WWW_USER_PASSWORD=airflow
+
+# ============================================
+# Directorios del proyecto
+# ============================================
+AIRFLOW_PROJ_DIR=.
+
+# ============================================
+# Configuración de la base de datos
+# ============================================
+AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql+psycopg2://airflow:airflow@postgres/airflow
+AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+
+# ============================================
+# Configuración adicional
+# ============================================
+AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+AIRFLOW__CORE__LOAD_EXAMPLES=false
+
+# Para Windows (opcional)
+AIRFLOW_UID=50000
+
+
+![image](https://github.com/user-attachments/assets/8690d0e9-e537-4289-bee2-1224b7963915)
+
+Ahora, hacemos una copia de la carpeta Walmart_project y lo pegamos dentro de la carpeta de Airflow.
+
+![image](https://github.com/user-attachments/assets/b46ed8ac-7da4-458e-a4ef-17ede5f19648)
+
+Ahora, agregamos Airflow Project Dir dentro de docker-compose en la configuración de volumes.
+
+Código:
+
+- ${AIRFLOW_PROJ_DIR:-.}/walmart_project:/opt/airflow/walmart_project
+
+![image](https://github.com/user-attachments/assets/9302b803-493b-4615-8d6b-2b55ccf9469d)
+
+Luego en la parte de desarrollo (enviroment), cambiamos AIRFLOW__CORE__LOAD_EXAMPLES: 'true' por AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+
+
+![image](https://github.com/user-attachments/assets/5b228785-36c2-4887-9904-2c0500330b36)
+
+OJO: No olvidar guardar los cambios
+
+Ahora, levantamos docker compose desde la terminal.
+
+Código:
+ 
+        docker compose up -d
+
+![image](https://github.com/user-attachments/assets/c9d49ee7-3eeb-4e7f-978d-68c727fc396e)
+
+Verificamos en docker desktop la creación del container Airflow.
+
+![image](https://github.com/user-attachments/assets/f925cae6-61e1-40e7-8bf7-87e5607b3668)
+
+Ahora, abriremos en nuestro navegador el localhost:8080/dags de Airflow para ir monitoreando el desarrollo.
+
+
+![image](https://github.com/user-attachments/assets/527761a3-b513-4603-b9c3-53c94dfc90b7)
+
+Luego, vamos a la carpeta Airflow/dags y creamos el archivo llamado orchestrate.py
+
+![image](https://github.com/user-attachments/assets/db7e8bfb-de28-4dde-be91-78cc767bde99)
+
+Primero vamos a la terminal y en la carpeta raíz ejecutamos código.
+
+Código:
+
+        cd ..
+
+código:
+
+        uv add apache-airflow
+
+![image](https://github.com/user-attachments/assets/fd68a43f-3637-4460-b091-04bfbb39ee98)
+
+Ahora, volvemos al archivo orchestrate.py y escribimos el siguiente código.
+
+Código:
+
+        from airflow.sdk import dag, task
+
+        @dag
+        def orchestrate():
+
+            @task
+            def ingest_cdc():
+                return "CDC data ingested"
+
+            @task.bash
+            def source_freshness():
+                return "dbt source freshness"
+
+ 
+Y en la terminal ejecutamos
+
+Código:
+
+        cd Walmart_project
+
+
+código:
+
+        dbt source freshness
+
+![image](https://github.com/user-attachments/assets/59f4f7e7-03ef-4e44-9310-9e3f0802dec2)
+
+Ahora, estableceremos manualmente el trabajo de directorio usando el comando “cd” antes de ejecutar. Así es que, pasaremos a la carpeta raíz y, entraremos a la carpeta Airflow\dags 
+
+Código:
+
+        cd ..
+
+Código:
+
+        cd airflow
+
+
+Código:
+
+        cd dags
+
+![image](https://github.com/user-attachments/assets/e9748273-e6ab-4c94-9a05-968e273b4695)
+
+Y ahora modificamos el código del archivo orchestrate.py
+
+Código:
+
+        from airflow.sdk import dag, task
+        from airflow.providers.standard.operators.bash import BashOperator
+        from datetime import datetime
+
+        @dag(
+            dag_id='orchestrate',
+            schedule='@daily',
+            start_date=datetime(2024, 1, 1),
+            catchup=False,
+            tags=['walmart', 'dbt']
+        )
+        def orchestrate():
+
+            @task
+            def ingest_cdc():
+                return "CDC data ingested"
+
+            clean_target = BashOperator(
+                task_id='clean_target',
+                bash_command='rm -rf /opt/airflow/walmart_project/target && rm -rf /opt/airflow/walmart_project/logs',
+                cwd='/opt/airflow/walmart_project'
+            )
+
+            source_freshness = BashOperator(
+                task_id='source_freshness',
+                bash_command='dbt source freshness',
+                cwd='/opt/airflow/walmart_project'
+            )
+
+            silver_technical = BashOperator(
+                task_id='silver_technical',
+                cwd='/opt/airflow/walmart_project',
+                bash_command='dbt run --select silver_t'
+            )
+
+            silver_technical_tests = BashOperator(
+                task_id='silver_technical_tests',
+                cwd='/opt/airflow/walmart_project',
+                bash_command='dbt test --select silver_t'
+            )
+
+            silver_business = BashOperator(
+                task_id='silver_business',
+                cwd='/opt/airflow/walmart_project',
+                bash_command='dbt run --select silver_b'
+            )
+
+            silver_business_tests = BashOperator(
+                task_id='silver_business_tests',
+                cwd='/opt/airflow/walmart_project',
+                bash_command='dbt test --select silver_b'
+            )
+
+            gold_eph = BashOperator(
+                task_id='gold_ephemeral',
+                cwd='/opt/airflow/walmart_project',
+                bash_command='dbt run --select gold'
+            )
+
+            gold_dimensions = BashOperator(
+                task_id='gold_dimensions',
+                cwd='/opt/airflow/walmart_project',
+                bash_command='dbt snapshot'
+            )
+
+            gold_facts = BashOperator(
+                task_id='gold_facts',
+                cwd='/opt/airflow/walmart_project',
+                bash_command='dbt run --select gold/fact'
+            )
+
+            # Definir la dependencia
+            ingest_cdc_task = ingest_cdc()
+    
+            # Cadena de ejecución
+            ingest_cdc_task >> clean_target >> source_freshness >> silver_technical >> silver_technical_tests >> silver_business >> silver_business_tests >> gold_eph >> gold_dimensions >> gold_facts
+
+        orchestrate_dag = orchestrate()
+
+
+![image](https://github.com/user-attachments/assets/b0da7675-4c64-468a-b6e3-491d0620f082)
+
+Para eliminar esa linea bajo airflow.operator y evitar problema en la ejecucion, agregaremos el siguiente paquete desde la terminal.
+
+Código:
+
+        uv add airflow-operators
+
+![image](https://github.com/user-attachments/assets/7632aafc-4d2b-4f55-9b2b-461ad2599e53)
+
+Luego, creamos un Dockerfile en la carpeta de Airflow.
+
+![image](https://github.com/user-attachments/assets/58e6e60c-4b5a-41db-87e7-e29a40fb0f8c)
+
+Código:
+
+        FROM apache/airflow:3.3.1
+
+![image](https://github.com/user-attachments/assets/6c5d5769-2922-42bf-9838-29fcc92b3ae8)
+
+Luego, en la terminal, en la carpeta raíz ejecutamos
+
+Código:
+
+        python3 -m pip freeze > requirements.txt
+
+y se creará el archivo requirements.txt, el cual limpiaremos todo y pasaremos el siguiente código.
+
+Código:
+
+        airflow-operators>=0.11.0
+        apache-airflow>=3.3.1
+        dbt-core>=1.12.3
+        dbt-databricks>=1.10.9
+
+![image](https://github.com/user-attachments/assets/2e277dff-5f4e-4c80-98cc-3cbffe6d28fe)
+
+Luego, corremos el siguiente código.
+
+Código:
+
+        uv pip install -r requirements.txt
+
+![image](https://github.com/user-attachments/assets/5a6505db-b44f-43f0-9c9c-27b32656c9dc)
+
+ahora, regresamos a Dockerfile y completamos el código.
+
+Código:
+
+        FROM apache/airflow:3.3.1
+
+        USER root
+
+        RUN apt-get update && apt-get install -y gcc && apt-get clean
+
+        USER airflow
+
+        COPY ./requirements.txt .
+
+        RUN pip install --no-cache-dir -r requirements.txt
+
+
+Luego, en la terminal desinstalamos el docker compose para cargar o levantar otra versión mejorada. Para ello, entraremos primero en la carpeta Airflow.
+
+Código:
+
+        cd airflow
+
+
+Código:
+
+        Docker compose down
+
+![image](https://github.com/user-attachments/assets/a91037ab-bff9-4e3d-a439-c52a46fb0f01)
+
+Verificamos en docker desktop que este vacío.
+
+![image](https://github.com/user-attachments/assets/79f6321e-4719-4176-8f52-4832f10da6e9)
+
+Ahora, levantamos la infraestructura con docker compose
+
+Código:
+
+        Docker compose build
+
+
+Código:
+
+        Docker compose up -d
+
+![image](https://github.com/user-attachments/assets/a153cdd4-40df-4c47-839b-97fc4d4d4cda)
+
+![image](https://github.com/user-attachments/assets/c3bdf3e1-7da9-493d-bc25-554a8e41925c)
+
+* Verificar que los contenedores estén corriendo:
+
+Código:
+
+        docker ps
+
+Deberías ver:
+ 
+             - airflow-apiserver
+             - airflow-scheduler
+             - airflow-worker
+             - airflow-dag-processor
+             - airflow-triggerer
+             - postgres
+             - redis
+
+* Verificar que dbt está instalado en los contenedores:
+
+1. Verificar en el scheduler
+
+codigo:
+
+        docker-compose exec airflow-scheduler dbt --version
+
+2. Verificar en el worker (IMPORTANTE)
+
+codigo:
+
+        docker-compose exec airflow-worker dbt --version
+
+
+* Copiar el archivo profiles.yml a los contenedores:
+
+- Crear directorio .dbt en cada contenedor
+
+Código:
+
+        docker-compose exec airflow-scheduler mkdir -p /home/airflow/.dbt
+        docker-compose exec airflow-dag-processor mkdir -p /home/airflow/.dbt
+        docker-compose exec airflow-worker mkdir -p /home/airflow/.dbt
+
+
+- Copiar profiles.yml a cada contenedor
+
+Código:
+
+        docker cp C:\Users\User\.dbt\profiles.yml airflow-airflow-scheduler-1:/home/airflow/.dbt/profiles.yml
+        docker cp C:\Users\User\.dbt\profiles.yml airflow-airflow-dag-processor-1:/home/airflow/.dbt/profiles.yml
+        docker cp C:\Users\User\.dbt\profiles.yml airflow-airflow-worker-1:/home/airflow/.dbt/profiles.yml
+
+- Verificar que se copió correctamente
+
+Código:
+
+        docker-compose exec airflow-worker cat /home/airflow/.dbt/profiles.yml
+
+
+Verificar la conexión a Databricks:
+
+- Entrar al worker
+
+Código:
+
+        docker-compose exec airflow-worker bash
+
+- Ir al proyecto dbt
+
+Código:
+
+        cd /opt/airflow/walmart_project
+
+- Probar la conexión
+
+Código:
+
+        dbt debug
+
+** Deberías ver "All checks passed!"
+
+- Salir
+
+Código:
+
+        exit
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
+
+### 🚀 PASO 8: Ejecutar el DAG
+
+1.	Despausar el DAG.
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow dags unpause orchestrate
+
+2.	 Ejecutar el DAG manualmente:
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow dags trigger orchestrate
+
+3.	 Monitorear la ejecución
+
+- Ver logs del worker en tiempo real
+
+Código:
+
+        docker-compose logs -f airflow-worker
+
+
+-  Ver logs del scheduler
+
+Código:
+
+        docker-compose logs -f airflow-scheduler
+
+
+4.	Ver el estado del DAG
+
+
+- Ver el estado
+
+
+Código:
+                  
+       docker-compose exec airflow-scheduler airflow dags state orchestrate
+
+                 
+- Ver todas las ejecuciones.
+
+Código:
+         
+        docker-compose exec airflow-scheduler airflow dags list-runs --dag-id orchestrate
+
+
+-  Ver el estado de las tareas
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow tasks states-dag-run --dag-id orchestrate --run-id manual__YYYY-MM-DDTHH:MM:SS
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
+### 🧹 PASO 9: Comandos de limpieza
+
+9.1 Limpiar ejecuciones específicas (si es necesario)
+
+
+-  Ver los run_ids disponibles.
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow dags list-runs --dag-id orchestrate
+
+-  Limpiar una ejecución específica.
+
+codigo:
+
+        docker-compose exec airflow-scheduler airflow dags clear --run-id manual__2026-09-08T00:22:33.028726+00:00 orchestrate
+
+
+9.2 Limpiar por fecha
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow dags clear --partition-date-start 2024-01-01 orchestrate
+
+
+9.3 Reiniciar todo (desde cero)
+
+- Detener y eliminar contenedores.
+
+Código:
+
+        docker-compose down -v
+
+- Reconstruir
+
+Código:
+
+        docker-compose build
+
+
+- Iniciar
+
+Código:
+
+        docker-compose up -d
+
+
+- Ver logs
+
+Código:
+
+        docker-compose logs -f
+
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
+### 🔍 PASO 10: Comandos de diagnóstico
+
+**10.1 Verificar que el DAG está cargado**
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow dags list | grep orchestrate
+
+**10.2 Ver errores de importación:**
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow dags list-import-errors
+
+**10.3 Ver logs de una tarea específica**
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow tasks logs orchestrate source_freshness 2026-09-08
+
+
+**10.4 Ver el contenido del archivo de DAG**
+
+Código:
+
+        docker-compose exec airflow-scheduler cat /opt/airflow/dags/orchestrate.py
+
+
+**10.5 Ver el estado de todos los contenedores:**
+
+
+Código:
+
+        docker ps
+        docker stats
 
 
 
+**✅ Verificación final**
 
-![image]()
+Después de seguir todos los pasos, deberías ver:
 
-![image]()
+1.	✅ Todos los contenedores corriendo (docker ps).
+2.	✅ dbt instalado en el worker (docker-compose exec airflow-worker dbt --version).
+3.	✅ profiles.yml en el worker (docker-compose exec airflow-worker cat /home/airflow/.dbt/profiles.yml).
+4.	✅ El DAG visible en http://localhost:8080
+5.	✅ Todas las tareas ejecutándose sin errores.
 
-![image]()
 
-![image]()
+_______________________________________________________________________________________________________________________________________________________________________________________________________________
 
-![image]()
+### 🐛 Solución de problemas comunes
 
-![image]()
 
-![image]()
+Error: "dbt: command not found"
 
-![image]()
+- Instalar dbt en el worker
 
-![image]()
+Código:
 
-![image]()
+        docker-compose exec -u 0 airflow-worker python -m pip install dbt-core dbt-databricks
 
-![image]()
 
-![image]()
+Error: "profiles.yml not found"
 
-![image]()
+- Crear directorio y copiar archivo
 
-![image]()
+Código:
 
-![image]()
+        docker-compose exec airflow-worker mkdir -p /home/airflow/.dbt
+        docker cp C:\Users\User\.dbt\profiles.yml airflow-airflow-worker-1:/home/airflow/.dbt/profiles.yml
 
-![image]()
 
-![image]()
+Error: "Connection test failed"
 
-![image]()
+- Entrar al worker y verificar manualmente
 
-![image]()
+Código:
 
-![image]()
+        docker-compose exec airflow-worker bash
+        cd /opt/airflow/walmart_project
+        dbt debug
 
-![image]()
 
-![image]()
+El DAG no aparece en la UI
+
+- Ver errores de importación
+
+Código:
+
+        docker-compose exec airflow-scheduler airflow dags list-import-errors
+
+
+- Forzar recarga
+
+Código:
+
+        docker-compose restart airflow-dag-processor
+        docker-compose restart airflow-scheduler
+
+
+**¡¡FELICITACIONES! 🎉 Has configurado exitosamente un pipeline completo con Airflow, dbt y Databricks!**
+
+
 
 ![image]()
 
