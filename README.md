@@ -124,9 +124,9 @@ ________________________________________________________________________________
 
 bash:
 
-      git clone https://github.com/tuusuario/walmart-data-engineering.git
+      git clone https://github.com/AllGoHer/Walmart-Data-Engineering-Project.git
 
-      cd walmart-data-engineering
+      cd walmart_project
 
 **2. Configurar el Entorno**
 
@@ -373,56 +373,181 @@ ________________________________________________________________________________
 
 ### 🚀 DESARROLLO WALMART PROJECT
 
-![image]()
+Primero, creamos una carpeta y la vinculamos a Visual Studio Code.
 
-![image]()
+Luego hacemos click en el icono de copilot para vincular con visual studio code y tu github.
 
-![image]()
 
-![image]()
+![image](https://github.com/user-attachments/assets/7dabb3b7-e141-46b5-8337-9b69dc7eb3b6)
 
-![image]()
+Luego, autorizamos
 
-![image]()
+![image](https://github.com/user-attachments/assets/d49f4feb-54a0-4b20-aa7e-93e794dc0bcf)
 
-![image]()
+Luego, colocamos nuestro password para confirmar.
 
-![image]()
+![image](https://github.com/user-attachments/assets/33c4d434-0223-493d-a5b9-24c757996824)
 
-![image]()
+Y permitimos abra el vínculo asociado.
 
-![image]()
+Ahora, instalamos ghost desde la terminal de VSC.
 
-![image]()
+Código:
 
-![image]()
+       irm https://install.ghost.build/install.ps1 | iex
 
-![image]()
+![image](https://github.com/user-attachments/assets/786ae046-b8d3-41cf-ada6-e63553d0163c)
 
-![image]()
+Luego, solo presionamos enter a las siguientes consultas de autenticación y MCP.
 
-![image]()
+![image](https://github.com/user-attachments/assets/e927d6f5-3d2e-4aaf-9deb-0c38a2ddbbea)
 
-![image]()
+![image](https://github.com/user-attachments/assets/05001f33-b519-4ae3-836e-9b5af1f7da5e)
 
-![image]()
+Luego, instalamos python UV.
 
-![image]()
+Codigo:
 
-![image]()
+       Pip install uv
 
-![image]()
+Ahora, lo iniciamos.
 
-![image]()
+Código: 
 
-![image]()
+       uv init
 
-![image]()
+![image](https://github.com/user-attachments/assets/81b16cba-8c43-450c-9c14-7c9039696a28)
 
-![image]()
+Al ejecutar aparecerá todo esto en tu carpeta de proyecto.
 
-![image]()
+![image](https://github.com/user-attachments/assets/5e51a1cf-3d61-4d40-af19-b3b348df9d70)
 
+
+Creamos el entorno virtual del proyecto.
+
+Código:
+
+       python -m venv .venv
+
+
+Código:
+
+        .venv\Scripts\activate
+   
+
+![image](https://github.com/user-attachments/assets/c29bdf90-6858-4a72-95a6-c617d205408f)
+
+Ahora, cargamos la carpeta walmart_dataset (disponible en el repositorio) a VSC.
+
+![image](https://github.com/user-attachments/assets/bd8dd5d4-f5b0-4456-b06a-37bea0f7e963)
+
+Crearemos nuestra base de datos walmart_db
+
+Código:
+
+        ghost create walmart_db
+
+![image](https://github.com/user-attachments/assets/74bc95ab-090c-475c-abe2-d329aaf51bc4)
+
+Ahora, en el proyecto creamos un archivo llamado .env con el siguiente código
+
+Código:
+
+        POSTGRES_CONN = postgresql://tsdbadmin:vzugx5qioc2sfhaj@iz0kkxxbbp.guhpu8gjll.db.ghost.build:5432/tsdb?sslmode=require
+
+En la terminal creamos el api-key.
+
+Código:
+
+        ghost api-key create --name allgoher_api_walmart
+
+
+
+![image](https://github.com/user-attachments/assets/f76da472-672b-4919-a784-adbe0d0469e3)
+
+Para ver ahora que todo marcha bien, le hare una pregunta al IA Agent por el chat.
+
+Consulta: 
+
+          ¿Cuántas bases de datos tengo en mi fantasma? (ghost)
+
+![image](https://github.com/user-attachments/assets/1411ead5-363a-4a64-adfe-e49652d6c358)
+
+![image](https://github.com/user-attachments/assets/50ab64c4-f71a-46a9-83ff-8bddead7f6c2)
+
+Si deseo ver la lista de archivos fantasmas creados lo haré con el siguiente código.
+
+Código:
+
+        ghost list
+
+![image](https://github.com/user-attachments/assets/531cd6ef-7816-45fe-8737-72ab19e69342)
+
+
+Solo hay uno.
+
+Ahora, le daré una orden a mi IA Agent para que me cree un esquema y sus tablas.
+
+Chat IA Agent:
+
+               quiero que me crees tablas dentro de ghost walmart_db y, tambien quiero que me crees un esquema llamado "raw" dentro de mi walmart_db y crea tablas dentro de ese esquema usando mi script guardado en ddl (Walmart_schema.sql)
+
+![image](https://github.com/user-attachments/assets/02c90554-790c-45a8-8c3d-3468d91c6ecf)
+
+Chat IA Agent:
+
+               quiero que insertes los datos csv dentro de cada tabla, tengo archivos almacenados en walmart_dataset. necesitas insertar los datos csv usando '\copy' o 'copy_expert' metodo.
+
+![image](https://github.com/user-attachments/assets/050bf252-08a0-4281-b0fd-fefcfd77ac1a)
+
+![image](https://github.com/user-attachments/assets/c1f005f8-88c4-4577-bf5c-7877f7ed47f2)
+
+![image](https://github.com/user-attachments/assets/ca37f53f-db2b-4008-aa2b-a1643013bd69)
+
+Chat IA Agent:
+
+               quiero crear un fork de mi ghost walmart_db
+
+
+![image](https://github.com/user-attachments/assets/b534c22b-3b13-41a4-9e71-5b910c601f04)
+
+Para confirmar vamos al terminal y vemos las lista de fantasmas.
+
+Código:
+
+        ghost list
+
+![image](https://github.com/user-attachments/assets/94503961-c7b5-40b3-b24d-43412ec64e2b)
+
+Ahora haremos una consulta para elwalmart_db_fork
+
+Consulta:
+
+          ¿cuál es el primary key en la tabla store dentro de walmart_db_fork?
+
+![image](https://github.com/user-attachments/assets/38e58ab7-19e4-4948-8c0f-63d1ccf2823c)
+
+Consulta:
+
+          cuantos productos tengo en mi tabla productos dentro de mi raw schema en mi walmart_db
+
+![image](https://github.com/user-attachments/assets/905d3966-da08-4bd0-b195-518a8379e4ee)
+
+Ahora, en Databricks crearé un catálogo llamado Walmart.
+
+![image](https://github.com/user-attachments/assets/0a96f6c4-bfc0-4d71-ac11-af16507caa72)
+
+Luego nos dirigimos a workspace y crearé un notebook.
+
+![image](https://github.com/user-attachments/assets/e970f184-610c-44cf-be6f-97bd0df2179d)
+____________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+## STAR SCHEMA
+
+
+### BRONZE LAYER
+
+Ahora, creamos el esquema bronce.
 ![image]()
 
 ![image]()
